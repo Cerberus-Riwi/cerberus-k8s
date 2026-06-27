@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-quality-service
+  namespace: cerberus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: code-quality-service
+  template:
+    metadata:
+      labels:
+        app: code-quality-service
+    spec:
+      containers:
+        - name: code-quality-service
+          image: ghcr.io/cerberus-riwi/code-quality-service:latest
+          ports:
+            - containerPort: 5200
+          envFrom:
+            - secretRef:
+                name: rabbitmq-secret
+            - secretRef:
+                name: azure-postgres-secret
+            - secretRef:
+                name: jwt-secret
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5200
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5200
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: code-quality-service
+  namespace: cerberus
+spec:
+  selector:
+    app: code-quality-service
+  ports:
+    - port: 5200
+      targetPort: 5200
+  type: ClusterIP

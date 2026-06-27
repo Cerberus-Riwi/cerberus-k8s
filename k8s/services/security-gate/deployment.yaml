@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-gate
+  namespace: cerberus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: security-gate
+  template:
+    metadata:
+      labels:
+        app: security-gate
+    spec:
+      containers:
+        - name: security-gate
+          image: ghcr.io/cerberus-riwi/security-gate:latest
+          ports:
+            - containerPort: 5275
+          envFrom:
+            - secretRef:
+                name: rabbitmq-secret
+            - secretRef:
+                name: azure-postgres-secret
+            - secretRef:
+                name: jwt-secret
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5275
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5275
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: security-gate
+  namespace: cerberus
+spec:
+  selector:
+    app: security-gate
+  ports:
+    - port: 5275
+      targetPort: 5275
+  type: ClusterIP
