@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  validate-cluster:
+  deploy:
+    name: Deploy to K3s Cluster
     runs-on: ubuntu-latest
 
     steps:
@@ -14,32 +15,87 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Validate Kubernetes Cluster
+      - name: Create remote working directory
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ~/cerberus-k8s/k8s"
+
+      - name: Copy manifests to master node
+        run: |
+          scp -r k8s/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/cerberus-k8s/
+
+      - name: Apply namespace
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "kubectl apply -f ~/cerberus-k8s/k8s/base/namespace.yaml"
+
+      - name: Apply ConfigMaps
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e
+            if ls ~/cerberus-k8s/k8s/base/configmaps/*.yaml 2>/dev/null; then
+              kubectl apply -f ~/cerberus-k8s/k8s/base/configmaps/
+            else
+              echo "No ConfigMaps found, skipping."
+            fi
+          EOF
 
-            echo "Servidor:"
-            hostname
+      - name: Apply Secrets
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            if ls ~/cerberus-k8s/k8s/base/secrets/*.yaml 2>/dev/null; then
+              kubectl apply -f ~/cerberus-k8s/k8s/base/secrets/
+            else
+              echo "No Secrets found, skipping."
+            fi
+          EOF
 
-            echo ""
-            echo "Version kubectl:"
-            kubectl version --client
+      - name: Install / Upgrade RabbitMQ via Helm
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            helm repo add bitnami https://charts.bitnami.com/bitnami
+            helm repo update
+            helm upgrade --install rabbitmq bitnami/rabbitmq \
+              --namespace cerberus \
+              --values ~/cerberus-k8s/k8s/infrastructure/rabbitmq/values.yaml \
+              --wait \
+              --timeout 5m
+          EOF
 
-            echo ""
-            echo "Nodos:"
+      - name: Apply application manifests
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            for service in security-gate vulnerability-service code-quality-service analytics frontend; do
+              dir=~/cerberus-k8s/k8s/applications/$service
+              if ls $dir/*.yaml 2>/dev/null; then
+                echo "Applying $service..."
+                kubectl apply -f $dir/
+              else
+                echo "No manifests for $service, skipping."
+              fi
+            done
+          EOF
+
+      - name: Apply Ingress
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            if ls ~/cerberus-k8s/k8s/infrastructure/ingress/*.yaml 2>/dev/null; then
+              kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/ingress/
+            else
+              echo "No Ingress manifests found, skipping."
+            fi
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            echo "=== Nodes ==="
             kubectl get nodes
-
-            echo ""
-            echo "Namespaces:"
-            kubectl get ns
+            echo "=== Namespace cerberus ==="
+            kubectl get all -n cerberus
           EOF

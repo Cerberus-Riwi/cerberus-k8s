@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: cerberus-cluster-info
+  namespace: cerberus
+
+data:
+  project: "CERBERUS"
+  environment: "development"
+  managed-by: "GitHub Actions"
+  cluster: "cerberus-k3s"
+  owner: "Amon089"
+  version: "1.0.0"
