@@ -1,28 +1,116 @@
-global:
-  security:
-    allowInsecureImages: true
+# .github/workflows/deploy-infrastructure.yml
+name: Deploy Infrastructure
 
-image:
-  registry: docker.io
-  repository: library/rabbitmq
-  tag: 3.13-management
+on:
+  push:
+    branches:
+      - main
 
-auth:
-  username: admin
-  password: admin123456
-  erlangCookie: cerberus-erlang-cookie
-replicaCount: 1
-service:
-  type: ClusterIP
-persistence:
-  enabled: true
-  size: 8Gi
-resources:
-  requests:
-    cpu: 250m
-    memory: 256Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
-metrics:
-  enabled: true
+jobs:
+  deploy:
+    name: Deploy to K3s Cluster
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create remote working directory
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ~/cerberus-k8s/k8s"
+
+      - name: Copy manifests to master node
+        run: |
+          scp -r k8s/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/cerberus-k8s/
+
+      - name: Apply namespace
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml && kubectl apply -f ~/cerberus-k8s/k8s/base/namespace.yaml"
+
+      - name: Apply ConfigMaps
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            if ls ~/cerberus-k8s/k8s/base/configmaps/*.yaml 2>/dev/null; then
+              kubectl apply -f ~/cerberus-k8s/k8s/base/configmaps/
+            else
+              echo "No ConfigMaps found, skipping."
+            fi
+          EOF
+
+      - name: Apply Secrets
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            if ls ~/cerberus-k8s/k8s/base/secrets/*.yaml 2>/dev/null; then
+              kubectl apply -f ~/cerberus-k8s/k8s/base/secrets/
+            else
+              echo "No Secrets found, skipping."
+            fi
+          EOF
+
+      - name: Cleanup previous RabbitMQ release
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            helm uninstall rabbitmq -n cerberus 2>/dev/null || true
+            kubectl delete pvc data-rabbitmq-0 -n cerberus 2>/dev/null || true
+          EOF
+
+      - name: Install / Upgrade RabbitMQ via Helm
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            helm repo add bitnami https://charts.bitnami.com/bitnami
+            helm repo update
+            helm upgrade --install rabbitmq bitnami/rabbitmq \
+              --namespace cerberus \
+              --values ~/cerberus-k8s/k8s/infrastructure/rabbitmq/values.yaml \
+              --wait \
+              --timeout 5m
+          EOF
+
+      - name: Apply application manifests
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            for service in security-gate vulnerability-service code-quality-service analytics frontend; do
+              dir=~/cerberus-k8s/k8s/applications/$service
+              if ls $dir/*.yaml 2>/dev/null; then
+                echo "Applying $service..."
+                kubectl apply -f $dir/
+              else
+                echo "No manifests for $service, skipping."
+              fi
+            done
+          EOF
+
+      - name: Apply Ingress
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            if ls ~/cerberus-k8s/k8s/infrastructure/ingress/*.yaml 2>/dev/null; then
+              kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/ingress/
+            else
+              echo "No Ingress manifests found, skipping."
+            fi
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            echo "=== Nodes ==="
+            kubectl get nodes
+            echo "=== Namespace cerberus ==="
+            kubectl get all -n cerberus
+          EOF
