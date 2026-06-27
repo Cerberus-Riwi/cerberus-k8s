@@ -79,7 +79,7 @@ jobs:
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             for service in security-gate vulnerability-service code-quality-service analytics frontend; do
-              dir=~/cerberus-k8s/k8s/applications/$service
+              dir=~/cerberus-k8s/k8s/services/$service
               if ls $dir/*.yaml 2>/dev/null; then
                 echo "Applying $service..."
                 kubectl apply -f $dir/
