@@ -1,0 +1,24 @@
+auth:
+  username: admin
+  password: admin123456
+  erlangCookie: cerberus-erlang-cookie
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+
+persistence:
+  enabled: true
+  size: 8Gi
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+metrics:
+  enabled: true
