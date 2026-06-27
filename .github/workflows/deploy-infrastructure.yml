@@ -57,17 +57,21 @@ jobs:
             fi
           EOF
 
-      - name: Install / Upgrade RabbitMQ via Helm
+      - name: Cleanup previous RabbitMQ release
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            helm repo add bitnami https://charts.bitnami.com/bitnami
-            helm repo update
-            helm upgrade --install rabbitmq bitnami/rabbitmq \
-              --namespace cerberus \
-              --values ~/cerberus-k8s/k8s/infrastructure/rabbitmq/values.yaml \
-              --wait \
-              --timeout 5m
+            kubectl delete statefulset rabbitmq -n cerberus 2>/dev/null || true
+            kubectl delete service rabbitmq -n cerberus 2>/dev/null || true
+            kubectl delete service rabbitmq-headless -n cerberus 2>/dev/null || true
+            kubectl delete pvc data-rabbitmq-0 -n cerberus 2>/dev/null || true
+          EOF
+
+      - name: Deploy RabbitMQ
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/rabbitmq/rabbitmq.yaml
           EOF
 
       - name: Apply application manifests
