@@ -3,9 +3,9 @@ global:
     allowInsecureImages: true
 
 image:
-  registry: ghcr.io
-  repository: bitnami/rabbitmq
-  tag: latest
+  registry: docker.io
+  repository: library/rabbitmq
+  tag: 3.13-management
 
 auth:
   username: admin
