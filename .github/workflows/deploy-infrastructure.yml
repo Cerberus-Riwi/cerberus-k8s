@@ -33,11 +33,12 @@ jobs:
       - name: Apply namespace
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "kubectl apply -f ~/cerberus-k8s/k8s/base/namespace.yaml"
+            "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml && kubectl apply -f ~/cerberus-k8s/k8s/base/namespace.yaml"
 
       - name: Apply ConfigMaps
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             if ls ~/cerberus-k8s/k8s/base/configmaps/*.yaml 2>/dev/null; then
               kubectl apply -f ~/cerberus-k8s/k8s/base/configmaps/
             else
@@ -48,6 +49,7 @@ jobs:
       - name: Apply Secrets
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             if ls ~/cerberus-k8s/k8s/base/secrets/*.yaml 2>/dev/null; then
               kubectl apply -f ~/cerberus-k8s/k8s/base/secrets/
             else
@@ -58,6 +60,7 @@ jobs:
       - name: Install / Upgrade RabbitMQ via Helm
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             helm repo add bitnami https://charts.bitnami.com/bitnami
             helm repo update
             helm upgrade --install rabbitmq bitnami/rabbitmq \
@@ -70,6 +73,7 @@ jobs:
       - name: Apply application manifests
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             for service in security-gate vulnerability-service code-quality-service analytics frontend; do
               dir=~/cerberus-k8s/k8s/applications/$service
               if ls $dir/*.yaml 2>/dev/null; then
@@ -84,6 +88,7 @@ jobs:
       - name: Apply Ingress
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             if ls ~/cerberus-k8s/k8s/infrastructure/ingress/*.yaml 2>/dev/null; then
               kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/ingress/
             else
@@ -94,6 +99,7 @@ jobs:
       - name: Verify deployment
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             echo "=== Nodes ==="
             kubectl get nodes
             echo "=== Namespace cerberus ==="
