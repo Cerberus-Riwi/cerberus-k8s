@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cerberus-ingress
+  namespace: cerberus
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api/scan
+            pathType: Prefix
+            backend:
+              service:
+                name: security-gate
+                port:
+                  number: 5275
+          - path: /api/v1/vulnerabilities
+            pathType: Prefix
+            backend:
+              service:
+                name: vulnerability-service
+                port:
+                  number: 5114
+          - path: /api/quality-gate
+            pathType: Prefix
+            backend:
+              service:
+                name: qualitygate-service
+                port:
+                  number: 5004
+          - path: /api/codequality
+            pathType: Prefix
+            backend:
+              service:
+                name: codequality-service
+                port:
+                  number: 5003
+          - path: /api/ai
+            pathType: Prefix
+            backend:
+              service:
+                name: analytics
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
