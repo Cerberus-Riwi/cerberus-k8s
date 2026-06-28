@@ -13,6 +13,7 @@ spec:
       labels:
         app: qualitygate-service
     spec:
+      serviceAccountName: qualitygate-sa
       containers:
         - name: qualitygate-service
           image: ghcr.io/cerberus-riwi/qualitygate-service:latest

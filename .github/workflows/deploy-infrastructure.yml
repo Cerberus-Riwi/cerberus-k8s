@@ -35,6 +35,13 @@ jobs:
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml && kubectl apply -f ~/cerberus-k8s/k8s/base/namespace.yaml"
 
+      - name: Apply RBAC
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/rbac/qualitygate-rbac.yaml
+          EOF
+
       - name: Apply ConfigMaps
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
