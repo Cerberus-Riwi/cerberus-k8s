@@ -19,6 +19,8 @@ spec:
           ports:
             - containerPort: 5004
           envFrom:
+            - configMapRef:
+                name: cerberus-config
             - secretRef:
                 name: rabbitmq-secret
             - secretRef:
