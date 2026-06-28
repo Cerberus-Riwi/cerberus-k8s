@@ -34,7 +34,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: codequality-service
+                name: code-quality-service
                 port:
                   number: 5003
           - path: /api/ai
