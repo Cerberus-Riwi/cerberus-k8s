@@ -46,17 +46,6 @@ jobs:
             fi
           EOF
 
-      - name: Apply Secrets
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            if ls ~/cerberus-k8s/k8s/base/secrets/*.yaml 2>/dev/null; then
-              kubectl apply -f ~/cerberus-k8s/k8s/base/secrets/
-            else
-              echo "No Secrets found, skipping."
-            fi
-          EOF
-
       - name: Cleanup previous RabbitMQ release
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
@@ -78,7 +67,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            for service in security-gate vulnerability-service code-quality-service analytics frontend; do
+            for service in security-gate vulnerability-service code-quality-service qualitygate-service analytics frontend; do
               dir=~/cerberus-k8s/k8s/services/$service
               if ls $dir/*.yaml 2>/dev/null; then
                 echo "Applying $service..."
