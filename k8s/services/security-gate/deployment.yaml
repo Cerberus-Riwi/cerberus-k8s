@@ -21,6 +21,8 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: "http://+:5275"
+            - name: ConnectionStrings__Default
+              value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASSWORD)"
           envFrom:
             - configMapRef:
                 name: cerberus-config
