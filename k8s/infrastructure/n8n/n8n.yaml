@@ -39,6 +39,8 @@ spec:
               value: "5678"
             - name: N8N_PROTOCOL
               value: "http"
+            - name: N8N_SECURE_COOKIE
+              value: "false"
             - name: WEBHOOK_URL
               value: "http://164.68.108.39:30678/"
             - name: GENERIC_TIMEZONE
