@@ -39,8 +39,10 @@ spec:
               value: "5678"
             - name: N8N_PROTOCOL
               value: "http"
+            - name: N8N_EDITOR_BASE_URL
+              value: "http://164.68.108.39/n8n/"
             - name: WEBHOOK_URL
-              value: "http://164.68.108.39:30678/"
+              value: "http://164.68.108.39/n8n/"
             - name: GENERIC_TIMEZONE
               value: "America/Bogota"
             - name: NODE_OPTIONS
@@ -78,10 +80,9 @@ metadata:
   name: n8n
   namespace: cerberus
 spec:
-  type: NodePort
   selector:
     app: n8n
   ports:
     - port: 5678
       targetPort: 5678
-      nodePort: 30678
+  type: ClusterIP
