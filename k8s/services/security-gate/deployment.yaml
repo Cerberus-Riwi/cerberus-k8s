@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: security-gate
@@ -18,6 +18,19 @@ spec:
           image: ghcr.io/cerberus-riwi/security-gate:latest
           ports:
             - containerPort: 5275
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:5275"
+            - name: ConnectionStrings__Default
+              value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASSWORD)"
+            - name: RabbitMQ__Host
+              value: "rabbitmq.cerberus.svc.cluster.local"
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__User
+              value: "$(RABBITMQ_DEFAULT_USER)"
+            - name: RabbitMQ__Password
+              value: "$(RABBITMQ_DEFAULT_PASS)"
           envFrom:
             - configMapRef:
                 name: cerberus-config

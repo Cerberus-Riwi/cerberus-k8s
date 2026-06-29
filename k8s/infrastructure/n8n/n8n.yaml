@@ -1,3 +1,15 @@
+﻿apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+  namespace: cerberus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,6 +25,8 @@ spec:
       labels:
         app: n8n
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: n8n
           image: n8nio/n8n:latest
@@ -20,29 +34,29 @@ spec:
             - containerPort: 5678
           env:
             - name: N8N_HOST
-              value: "0.0.0.0"
+              value: "164.68.108.39"
             - name: N8N_PORT
               value: "5678"
             - name: N8N_PROTOCOL
               value: "http"
+            - name: N8N_SECURE_COOKIE
+              value: "false"
             - name: WEBHOOK_URL
-              value: "http://164.68.108.39:5678"
+              value: "http://164.68.108.39:30678/"
             - name: GENERIC_TIMEZONE
               value: "America/Bogota"
-            - name: DB_TYPE
-              value: "sqlite"
-            - name: N8N_USER_FOLDER
-              value: "/home/node/.n8n"
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size=768"
           volumeMounts:
             - name: n8n-data
               mountPath: /home/node/.n8n
           resources:
             requests:
               cpu: 250m
-              memory: 256Mi
-            limits:
-              cpu: 500m
               memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           livenessProbe:
             httpGet:
               path: /healthz
@@ -57,7 +71,8 @@ spec:
             periodSeconds: 10
       volumes:
         - name: n8n-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: n8n-data
 ---
 apiVersion: v1
 kind: Service
@@ -65,9 +80,10 @@ metadata:
   name: n8n
   namespace: cerberus
 spec:
+  type: NodePort
   selector:
     app: n8n
   ports:
     - port: 5678
       targetPort: 5678
-  type: ClusterIP
+      nodePort: 30678
