@@ -23,6 +23,14 @@ spec:
               value: "http://+:5275"
             - name: ConnectionStrings__Default
               value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASSWORD)"
+            - name: RabbitMQ__Host
+              value: "rabbitmq.cerberus.svc.cluster.local"
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__User
+              value: "$(RABBITMQ_DEFAULT_USER)"
+            - name: RabbitMQ__Password
+              value: "$(RABBITMQ_DEFAULT_PASS)"
           envFrom:
             - configMapRef:
                 name: cerberus-config
