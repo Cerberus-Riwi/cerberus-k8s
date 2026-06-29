@@ -13,6 +13,8 @@ spec:
       labels:
         app: security-gate
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: security-gate
           image: ghcr.io/cerberus-riwi/security-gate:latest

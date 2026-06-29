@@ -13,6 +13,8 @@ spec:
       labels:
         app: code-quality-service
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: code-quality-service
           image: ghcr.io/cerberus-riwi/code-quality-service:latest

@@ -13,6 +13,8 @@ spec:
       labels:
         app: analytics
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: analytics
           image: ghcr.io/cerberus-riwi/analytics-service:latest
