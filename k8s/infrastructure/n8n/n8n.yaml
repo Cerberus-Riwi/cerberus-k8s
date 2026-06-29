@@ -34,19 +34,21 @@ spec:
             - containerPort: 5678
           env:
             - name: N8N_HOST
-              value: "0.0.0.0"
+              value: "164.68.108.39"
             - name: N8N_PORT
               value: "5678"
             - name: N8N_PROTOCOL
               value: "http"
+            - name: N8N_PATH
+              value: "/n8n/"
+            - name: N8N_EDITOR_BASE_URL
+              value: "http://164.68.108.39/n8n/"
             - name: WEBHOOK_URL
-              value: "http://164.68.108.39:5678"
+              value: "http://164.68.108.39/n8n/"
             - name: GENERIC_TIMEZONE
               value: "America/Bogota"
             - name: NODE_OPTIONS
               value: "--max-old-space-size=768"
-            - name: N8N_RUNNERS_ENABLED
-              value: "false"
           volumeMounts:
             - name: n8n-data
               mountPath: /home/node/.n8n
