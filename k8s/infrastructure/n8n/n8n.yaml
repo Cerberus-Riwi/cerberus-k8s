@@ -29,6 +29,13 @@ spec:
               value: "http://164.68.108.39:5678"
             - name: GENERIC_TIMEZONE
               value: "America/Bogota"
+            - name: DB_TYPE
+              value: "sqlite"
+            - name: N8N_USER_FOLDER
+              value: "/home/node/.n8n"
+          volumeMounts:
+            - name: n8n-data
+              mountPath: /home/node/.n8n
           resources:
             requests:
               cpu: 250m
@@ -48,6 +55,9 @@ spec:
               port: 5678
             initialDelaySeconds: 45
             periodSeconds: 10
+      volumes:
+        - name: n8n-data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
