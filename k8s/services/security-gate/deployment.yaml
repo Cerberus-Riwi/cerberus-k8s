@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: security-gate
@@ -18,6 +18,9 @@ spec:
           image: ghcr.io/cerberus-riwi/security-gate:latest
           ports:
             - containerPort: 5275
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:5275"
           envFrom:
             - configMapRef:
                 name: cerberus-config

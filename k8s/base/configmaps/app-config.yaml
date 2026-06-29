@@ -7,4 +7,3 @@ data:
   ENVIRONMENT: "production"
   RABBITMQ_HOST: "rabbitmq.cerberus.svc.cluster.local"
   RABBITMQ_PORT: "5672"
-  ASPNETCORE_URLS: "http://+:5275"
