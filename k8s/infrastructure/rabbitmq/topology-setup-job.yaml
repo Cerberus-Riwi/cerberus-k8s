@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rabbitmq-topology-setup
+  namespace: cerberus
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: rabbitmq-topology-setup
+          image: curlimages/curl:8.10.1
+          env:
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_DEFAULT_PASS
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for RabbitMQ management API..."
+              until curl -sf -u "$RABBITMQ_USER:$RABBITMQ_PASSWORD" \
+                http://rabbitmq.cerberus.svc.cluster.local:15672/api/overview > /dev/null; do
+                echo "RabbitMQ not ready yet, retrying in 5s..."
+                sleep 5
+              done
+
+              echo "Declaring exchange cerberus.scan.requests..."
+              curl -sf -u "$RABBITMQ_USER:$RABBITMQ_PASSWORD" -X PUT \
+                http://rabbitmq.cerberus.svc.cluster.local:15672/api/exchanges/%2F/cerberus.scan.requests \
+                -H "content-type: application/json" \
+                -d '{"type":"fanout","durable":true}'
+
+              echo "RabbitMQ topology applied successfully."
