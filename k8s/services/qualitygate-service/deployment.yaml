@@ -24,8 +24,43 @@ spec:
           env:
             - name: ASPNETCORE_URLS
               value: "http://+:5004"
-            - name: ConnectionStrings__Default
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: azure-postgres-secret
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: azure-postgres-secret
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: azure-postgres-secret
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: azure-postgres-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: azure-postgres-secret
+                  key: DB_PASSWORD
+            - name: DB_CONNECTION_STRING
               value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASSWORD)"
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_DEFAULT_PASS
             - name: RabbitMQ__Host
               value: "rabbitmq.cerberus.svc.cluster.local"
             - name: RabbitMQ__Port
