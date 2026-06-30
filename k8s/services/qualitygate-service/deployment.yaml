@@ -51,24 +51,20 @@ spec:
                   key: DB_PASSWORD
             - name: DB_CONNECTION_STRING
               value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASSWORD)"
-            - name: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_HOST
+              value: "rabbitmq.cerberus.svc.cluster.local"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: rabbitmq-secret
                   key: RABBITMQ_DEFAULT_USER
-            - name: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: rabbitmq-secret
                   key: RABBITMQ_DEFAULT_PASS
-            - name: RabbitMQ__Host
-              value: "rabbitmq.cerberus.svc.cluster.local"
-            - name: RabbitMQ__Port
-              value: "5672"
-            - name: RabbitMQ__User
-              value: "$(RABBITMQ_DEFAULT_USER)"
-            - name: RabbitMQ__Password
-              value: "$(RABBITMQ_DEFAULT_PASS)"
           envFrom:
             - configMapRef:
                 name: cerberus-config
