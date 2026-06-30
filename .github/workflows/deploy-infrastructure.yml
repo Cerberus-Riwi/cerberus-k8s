@@ -34,7 +34,6 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml && kubectl apply -f ~/cerberus-k8s/k8s/base/namespace.yaml"
-            
 
       - name: Apply ConfigMaps
         run: |
@@ -54,7 +53,6 @@ jobs:
             kubectl delete statefulset rabbitmq -n cerberus 2>/dev/null || true
             kubectl delete service rabbitmq -n cerberus 2>/dev/null || true
             kubectl delete service rabbitmq-headless -n cerberus 2>/dev/null || true
-            kubectl delete pvc data-rabbitmq-0 -n cerberus 2>/dev/null || true
           EOF
 
       - name: Deploy RabbitMQ
@@ -62,6 +60,14 @@ jobs:
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/rabbitmq/rabbitmq.yaml
+          EOF
+
+      - name: Apply RabbitMQ topology
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            kubectl delete job rabbitmq-topology-setup -n cerberus --ignore-not-found=true
+            kubectl apply -f ~/cerberus-k8s/k8s/infrastructure/rabbitmq/topology-setup-job.yaml
           EOF
 
       - name: Apply application manifests
