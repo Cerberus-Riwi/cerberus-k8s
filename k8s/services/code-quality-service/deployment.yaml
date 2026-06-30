@@ -20,6 +20,9 @@ spec:
           image: ghcr.io/cerberus-riwi/code-quality-service:latest
           ports:
             - containerPort: 5003
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:5003"
           envFrom:
             - configMapRef:
                 name: cerberus-config
@@ -38,13 +41,13 @@ spec:
               memory: 512Mi
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/Semgrep/health
               port: 5003
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /api/Semgrep/health
               port: 5003
             initialDelaySeconds: 15
             periodSeconds: 10
