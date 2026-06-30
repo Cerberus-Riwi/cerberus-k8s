@@ -44,10 +44,17 @@ spec:
                 name: analytics
                 port:
                   number: 8000
+          - path: /n8n
+            pathType: Prefix
+            backend:
+              service:
+                name: n8n
+                port:
+                  number: 5678
           - path: /
             pathType: Prefix
             backend:
               service:
                 name: frontend
                 port:
-                  number: 3000
+                  number: 80

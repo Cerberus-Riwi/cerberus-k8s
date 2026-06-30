@@ -19,7 +19,7 @@ spec:
         - name: frontend
           image: ghcr.io/cerberus-riwi/frontend:latest
           ports:
-            - containerPort: 3000
+            - containerPort: 80
           envFrom:
             - secretRef:
                 name: jwt-secret
@@ -33,13 +33,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: 80
             initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: 80
             initialDelaySeconds: 15
             periodSeconds: 10
 ---
@@ -52,6 +52,6 @@ spec:
   selector:
     app: frontend
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: 80
+      targetPort: 80
   type: ClusterIP
