@@ -42,6 +42,8 @@ spec:
                 name: azure-postgres-secret
             - secretRef:
                 name: jwt-secret
+            - secretRef:
+                name: securitygate-jwt
           resources:
             requests:
               cpu: 250m
