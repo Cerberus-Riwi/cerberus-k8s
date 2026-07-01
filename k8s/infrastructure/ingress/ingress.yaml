@@ -1,60 +1,94 @@
-﻿apiVersion: networking.k8s.io/v1
-kind: Ingress
+# IngressRoute — reemplaza el Ingress estándar para soportar middlewares Traefik.
+# Antes de aplicar, eliminar el Ingress anterior:
+#   kubectl delete ingress cerberus-ingress -n cerberus
+# Luego aplicar en orden:
+#   kubectl apply -f middlewares.yaml -n cerberus
+#   kubectl apply -f ingress.yaml -n cerberus
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
-  name: cerberus-ingress
+  name: cerberus-gateway
   namespace: cerberus
-  annotations:
-    kubernetes.io/ingress.class: traefik
 spec:
-  rules:
-    - http:
-        paths:
-          - path: /api/scan
-            pathType: Prefix
-            backend:
-              service:
-                name: security-gate
-                port:
-                  number: 5275
-          - path: /api/v1/vulnerabilities
-            pathType: Prefix
-            backend:
-              service:
-                name: vulnerability-service
-                port:
-                  number: 5114
-          - path: /api/quality-gate
-            pathType: Prefix
-            backend:
-              service:
-                name: qualitygate-service
-                port:
-                  number: 5004
-          - path: /api/codequality
-            pathType: Prefix
-            backend:
-              service:
-                name: code-quality-service
-                port:
-                  number: 5003
-          - path: /api/ai
-            pathType: Prefix
-            backend:
-              service:
-                name: analytics
-                port:
-                  number: 8000
-          - path: /n8n
-            pathType: Prefix
-            backend:
-              service:
-                name: n8n
-                port:
-                  number: 5678
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 80
+  entryPoints:
+    - web
+  routes:
+
+    # ── Público — sin validación de token ─────────────────────────────────────
+    - match: PathPrefix(`/api/auth`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: security-headers
+      services:
+        - name: security-gate
+          port: 5275
+
+    # ── Protegidos — requieren JWT válido ─────────────────────────────────────
+    - match: PathPrefix(`/api/scan`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: jwt-auth
+        - name: security-headers
+      services:
+        - name: security-gate
+          port: 5275
+
+    - match: PathPrefix(`/api/v1/vulnerabilities`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: jwt-auth
+        - name: security-headers
+      services:
+        - name: vulnerability-service
+          port: 5114
+
+    - match: PathPrefix(`/api/codequality`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: jwt-auth
+        - name: security-headers
+      services:
+        - name: code-quality-service
+          port: 5003
+
+    - match: PathPrefix(`/api/quality-gate`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: jwt-auth
+        - name: security-headers
+      services:
+        - name: qualitygate-service
+          port: 5004
+
+    # cerberus-ml — sirve en /api/kpis (el /api/ai del ingress anterior estaba roto)
+    - match: PathPrefix(`/api/kpis`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: jwt-auth
+        - name: security-headers
+      services:
+        - name: analytics
+          port: 8000
+
+    # ── Herramientas internas ─────────────────────────────────────────────────
+    - match: PathPrefix(`/n8n`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+      services:
+        - name: n8n
+          port: 5678
+
+    # ── Frontend — catch-all ──────────────────────────────────────────────────
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: frontend
+          port: 80

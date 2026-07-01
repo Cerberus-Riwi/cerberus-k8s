@@ -1,0 +1,60 @@
+# Verificar versión de Traefik en el cluster:
+#   kubectl get deploy traefik -n kube-system -o jsonpath='{.spec.template.spec.containers[0].image}'
+# Traefik v2.x → apiVersion: traefik.containo.us/v1alpha1
+# Traefik v3.x → apiVersion: traefik.io/v1alpha1
+
+---
+# Rate limiting global — 100 req/min por IP, burst de 50
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: cerberus
+spec:
+  rateLimit:
+    average: 100
+    burst: 50
+
+---
+# ForwardAuth — valida el JWT contra /api/auth/me en securitygate
+# Si devuelve 2xx → deja pasar. Si 4xx → bloquea con 401.
+# Los headers del response se propagan a los servicios internos.
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: jwt-auth
+  namespace: cerberus
+spec:
+  forwardAuth:
+    address: http://security-gate:5275/api/auth/me
+    authResponseHeaders:
+      - X-User-Id
+      - X-User-Email
+      - X-User-Role
+
+---
+# Security headers + CORS para desarrollo local
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: cerberus
+spec:
+  headers:
+    customResponseHeaders:
+      X-Content-Type-Options: "nosniff"
+      X-Frame-Options: "DENY"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+    accessControlAllowOriginList:
+      - "http://localhost:5173"
+      - "http://localhost:4173"
+    accessControlAllowMethods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    accessControlAllowHeaders:
+      - "Authorization"
+      - "Content-Type"
+    accessControlMaxAge: 86400
