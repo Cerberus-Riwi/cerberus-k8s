@@ -18,6 +18,7 @@ spec:
       containers:
         - name: code-quality-service
           image: ghcr.io/cerberus-riwi/code-quality-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5003
           env:

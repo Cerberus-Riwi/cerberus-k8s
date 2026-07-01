@@ -19,6 +19,7 @@ spec:
       containers:
         - name: qualitygate-service
           image: ghcr.io/cerberus-riwi/qualitygate-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5004
           env:

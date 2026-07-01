@@ -18,6 +18,7 @@ spec:
       containers:
         - name: security-gate
           image: ghcr.io/cerberus-riwi/security-gate:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5275
           env:
