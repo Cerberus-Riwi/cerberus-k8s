@@ -66,8 +66,19 @@ spec:
         - name: qualitygate-service
           port: 5004
 
-    # cerberus-ml — sirve en /api/kpis (el /api/ai del ingress anterior estaba roto)
+    # cerberus-ml — KPIs analytics
     - match: PathPrefix(`/api/kpis`)
+      kind: Rule
+      middlewares:
+        - name: rate-limit
+        - name: jwt-auth
+        - name: security-headers
+      services:
+        - name: analytics
+          port: 8000
+
+    # cerberus-ml — AI chat (Azure OpenAI)
+    - match: PathPrefix(`/api/ai`)
       kind: Rule
       middlewares:
         - name: rate-limit
