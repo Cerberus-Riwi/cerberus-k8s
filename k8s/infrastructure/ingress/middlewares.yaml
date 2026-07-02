@@ -1,4 +1,25 @@
-<<<<<<< HEAD
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cors-headers
+  namespace: cerberus
+spec:
+  headers:
+    accessControlAllowMethods:
+      - GET
+      - POST
+      - OPTIONS
+    accessControlAllowHeaders:
+      - Authorization
+      - Content-Type
+    accessControlAllowOriginList:
+      - http://localhost:5173
+      - http://localhost:5174
+      - http://localhost:5175
+      - https://cerberus.jaramc.dev
+    accessControlMaxAge: 86400
+    addVaryHeader: true
+---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -7,68 +28,17 @@ metadata:
 spec:
   forwardAuth:
     address: http://security-gate.cerberus.svc.cluster.local:5275/api/auth/me
-=======
-# Verificar versión de Traefik en el cluster:
-#   kubectl get deploy traefik -n kube-system -o jsonpath='{.spec.template.spec.containers[0].image}'
-# Traefik v2.x → apiVersion: traefik.containo.us/v1alpha1
-# Traefik v3.x → apiVersion: traefik.io/v1alpha1
-
----
-# Rate limiting global — 100 req/min por IP, burst de 50
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: rate-limit
-  namespace: cerberus
-spec:
-  rateLimit:
-    average: 100
-    burst: 50
-
----
-# ForwardAuth — valida el JWT contra /api/auth/me en securitygate
-# Si devuelve 2xx → deja pasar. Si 4xx → bloquea con 401.
-# Los headers del response se propagan a los servicios internos.
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: jwt-auth
-  namespace: cerberus
-spec:
-  forwardAuth:
-    address: http://security-gate:5275/api/auth/me
->>>>>>> 295142109ab0cc51a9b9cd746725a8717deca8c4
     authResponseHeaders:
       - X-User-Id
       - X-User-Email
       - X-User-Role
-<<<<<<< HEAD
-=======
-
 ---
-# Security headers + CORS para desarrollo local
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: security-headers
+  name: n8n-stripprefix
   namespace: cerberus
 spec:
-  headers:
-    customResponseHeaders:
-      X-Content-Type-Options: "nosniff"
-      X-Frame-Options: "DENY"
-      Referrer-Policy: "strict-origin-when-cross-origin"
-    accessControlAllowOriginList:
-      - "http://localhost:5173"
-      - "http://localhost:4173"
-    accessControlAllowMethods:
-      - "GET"
-      - "POST"
-      - "PUT"
-      - "DELETE"
-      - "OPTIONS"
-    accessControlAllowHeaders:
-      - "Authorization"
-      - "Content-Type"
-    accessControlMaxAge: 86400
->>>>>>> 295142109ab0cc51a9b9cd746725a8717deca8c4
+  stripPrefix:
+    prefixes:
+      - /n8n

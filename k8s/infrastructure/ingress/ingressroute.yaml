@@ -6,10 +6,13 @@ metadata:
 spec:
   entryPoints:
     - web
+    - websecure
   routes:
     - match: PathPrefix(`/api/auth`)
       kind: Rule
       priority: 100
+      middlewares:
+        - name: cors-headers
       services:
         - name: security-gate
           port: 5275
@@ -23,6 +26,7 @@ spec:
       kind: Rule
       priority: 50
       middlewares:
+        - name: cors-headers
         - name: forward-auth
       services:
         - name: security-gate
@@ -31,6 +35,7 @@ spec:
       kind: Rule
       priority: 50
       middlewares:
+        - name: cors-headers
         - name: forward-auth
       services:
         - name: vulnerability-service
@@ -39,6 +44,7 @@ spec:
       kind: Rule
       priority: 50
       middlewares:
+        - name: cors-headers
         - name: forward-auth
       services:
         - name: qualitygate-service
@@ -47,14 +53,16 @@ spec:
       kind: Rule
       priority: 50
       middlewares:
+        - name: cors-headers
         - name: forward-auth
       services:
         - name: code-quality-service
           port: 5003
-    - match: PathPrefix(`/api/ai`)
+    - match: PathPrefix(`/api/kpis`)
       kind: Rule
       priority: 50
       middlewares:
+        - name: cors-headers
         - name: forward-auth
       services:
         - name: analytics
@@ -65,3 +73,5 @@ spec:
       services:
         - name: frontend
           port: 80
+  tls:
+    secretName: api-cerberus-tls
